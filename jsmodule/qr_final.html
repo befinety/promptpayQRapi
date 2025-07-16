@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptPay QR Code Generator - Final</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin: 20px 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        .result.error {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+        }
+        .result.success {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #363;
+        }
+        .qr-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .qr-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .qr-info {
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .qr-info h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .qr-info p {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        .payload {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .examples {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .examples h4 {
+            margin-top: 0;
+            color: #f57c00;
+        }
+        .example-item {
+            margin: 5px 0;
+            cursor: pointer;
+            color: #1976d2;
+            text-decoration: underline;
+        }
+        .example-item:hover {
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 PromptPay QR Generator</h1>
+            <p>สร้าง QR Code สำหรับ PromptPay ที่สแกนได้จริง</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="target">เบอร์โทรศัพท์ หรือ เลขประจำตัวผู้เสียภาษี:</label>
+            <input type="text" id="target" placeholder="เช่น 0812345678 หรือ 1234567890123">
+        </div>
+        
+        <div class="form-group">
+            <label for="amount">จำนวนเงิน (บาท) - ไม่ใส่ก็ได้:</label>
+            <input type="number" id="amount" placeholder="เช่น 100.00" step="0.01" min="0">
+        </div>
+        
+        <button class="btn" onclick="generateQR()" id="generateBtn">
+            สร้าง QR Code
+        </button>
+        
+        <div class="examples">
+            <h4>ตัวอย่าง:</h4>
+            <div class="example-item" onclick="setExample('0812345678', '')">📱 เบอร์โทรศัพท์: 0812345678</div>
+            <div class="example-item" onclick="setExample('0812345678', '50')">💰 เบอร์โทรศัพท์ + จำนวน: 0812345678 (50 บาท)</div>
+            <div class="example-item" onclick="setExample('1234567890123', '')">🏢 เลขประจำตัวผู้เสียภาษี: 1234567890123</div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>กำลังสร้าง QR Code...</p>
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="qr-section">
+            <div class="qr-container" id="qrContainer" style="display: none;">
+                <div id="qrcode"></div>
+            </div>
+            
+            <div class="qr-info" id="qrInfo" style="display: none;">
+                <h3>ข้อมูล QR Code</h3>
+                <div id="qrDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="thaipromptpayapi.js"></script>
+    
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    
+    <script>
+        let qrLibraryLoaded = false;
+        
+        // Alternative QR Code generation using different method
+        function generateQRCodeHTML(text, size = 6) {
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(text);
+                qr.make();
+                
+                const moduleCount = qr.getModuleCount();
+                const cellSize = size;
+                let html = '<table style="border-collapse: collapse; margin: 0 auto;">';
+                
+                for (let row = 0; row < moduleCount; row++) {
+                    html += '<tr>';
+                    for (let col = 0; col < moduleCount; col++) {
+                        const color = qr.isDark(row, col) ? '#000000' : '#ffffff';
+                        html += `<td style="width: ${cellSize}px; height: ${cellSize}px; background-color: ${color}; padding: 0; margin: 0;"></td>`;
+                    }
+                    html += '</tr>';
+                }
+                html += '</table>';
+                
+                return html;
+            } catch (error) {
+                console.error('QR generation error:', error);
+                throw error;
+            }
+        }
+        
+        function setExample(target, amount) {
+            document.getElementById('target').value = target;
+            document.getElementById('amount').value = amount;
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('qrContainer').style.display = 'none';
+            document.getElementById('qrInfo').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('generateBtn').disabled = false;
+        }
+        
+        function showResult(message, type = 'success') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = type === 'success' ? '✅ ' + message : '❌ ' + message;
+            resultDiv.style.display = 'block';
+        }
+        
+        function generateQR() {
+            const target = document.getElementById('target').value.trim();
+            const amount = document.getElementById('amount').value.trim();
+            
+            if (!target) {
+                showResult('กรุณาใส่เบอร์โทรศัพท์หรือเลขประจำตัวผู้เสียภาษี', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            // Add small delay to show loading
+            setTimeout(() => {
+                try {
+                    // Validate target
+                    const validation = ThaiPromptPayAPI.validateTarget(target);
+                    if (!validation.isValid) {
+                        hideLoading();
+                        showResult('รูปแบบไม่ถูกต้อง กรุณาใส่เบอร์โทรศัพท์หรือเลขประจำตัวผู้เสียภาษี', 'error');
+                        return;
+                    }
+                    
+                    // Generate payload
+                    const payload = ThaiPromptPayAPI.generatePayload(target, amount ? parseFloat(amount) : undefined);
+                    
+                    // Generate QR Code
+                    const qrHTML = generateQRCodeHTML(payload, 4);
+                    
+                    // Display QR Code
+                    document.getElementById('qrcode').innerHTML = qrHTML;
+                    document.getElementById('qrContainer').style.display = 'block';
+                    
+                    // Show success message
+                    showResult('สร้าง QR Code สำเร็จ! สามารถสแกนได้ด้วยแอป Banking');
+                    
+                    // Show QR info
+                    showQRInfo(target, validation.type, amount, payload);
+                    
+                    hideLoading();
+                    
+                } catch (error) {
+                    hideLoading();
+                    showResult('เกิดข้อผิดพลาด: ' + error.message, 'error');
+                }
+            }, 500);
+        }
+        
+        function showQRInfo(target, type, amount, payload) {
+            const typeText = {
+                'phone': 'เบอร์โทรศัพท์',
+                'taxid': 'เลขประจำตัวผู้เสียภาษี',
+                'ewallet': 'e-Wallet ID'
+            };
+            
+            const detailsHTML = `
+                <p><strong>🎯 เป้าหมาย:</strong> ${target}</p>
+                <p><strong>📋 ประเภท:</strong> ${typeText[type] || type}</p>
+                <p><strong>💰 จำนวนเงิน:</strong> ${amount ? amount + ' บาท' : 'ไม่ระบุจำนวน (Static QR)'}</p>
+                <p><strong>📏 ความยาว Payload:</strong> ${payload.length} ตัวอักษร</p>
+                <p><strong>✅ สถานะ:</strong> พร้อมใช้งาน - สแกนได้ด้วยแอป Banking</p>
+                <p><strong>🔗 PromptPay Payload:</strong></p>
+                <div class="payload">${payload}</div>
+            `;
+            
+            document.getElementById('qrDetails').innerHTML = detailsHTML;
+            document.getElementById('qrInfo').style.display = 'block';
+        }
+        
+        // Auto-generate on Enter key
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateQR();
+            }
+        });
+        
+        // Check if QR library is loaded
+        window.addEventListener('load', function() {
+            if (typeof qrcode !== 'undefined') {
+                qrLibraryLoaded = true;
+                console.log('QR Code library loaded successfully');
+                
+                // Auto-generate example
+                setExample('0812345678', '100');
+                setTimeout(generateQR, 1000);
+            } else {
+                showResult('ไม่สามารถโหลด QR Code library ได้', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

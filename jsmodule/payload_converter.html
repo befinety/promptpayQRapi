@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptPay Payload Converter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin: 20px 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0;
+        }
+        .converter-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .converter-box {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+        }
+        .converter-box h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn.secondary {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        .result-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+        }
+        .result-item strong {
+            color: #1976d2;
+        }
+        .payload-display {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            white-space: pre-wrap;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .examples {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .examples h4 {
+            margin-top: 0;
+            color: #f57c00;
+        }
+        .example-item {
+            margin: 5px 0;
+            cursor: pointer;
+            color: #1976d2;
+            text-decoration: underline;
+            font-size: 12px;
+        }
+        .example-item:hover {
+            color: #0d47a1;
+        }
+        .qr-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .qr-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background-color: #667eea;
+            color: white;
+            border-bottom-color: #667eea;
+        }
+        .tab:hover {
+            background-color: #e9ecef;
+        }
+        .tab.active:hover {
+            background-color: #5a6fd8;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .converter-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 PromptPay Payload Converter</h1>
+            <p>แปลงข้อมูล PromptPay ไปมาได้ - สร้างและแปลง Payload</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('generate')">สร้าง Payload</button>
+            <button class="tab" onclick="showTab('decode')">แปลง Payload</button>
+            <button class="tab" onclick="showTab('test')">ทดสอบ</button>
+        </div>
+        
+        <!-- Generate Tab -->
+        <div id="generate" class="tab-content active">
+            <div class="converter-section">
+                <div class="converter-box">
+                    <h3>📱 สร้าง PromptPay Payload</h3>
+                    <div class="form-group">
+                        <label for="gen-target">เบอร์โทรศัพท์ / เลขประจำตัวผู้เสียภาษี:</label>
+                        <input type="text" id="gen-target" placeholder="0812345678 หรือ 1234567890123">
+                    </div>
+                    <div class="form-group">
+                        <label for="gen-amount">จำนวนเงิน (บาท) - ไม่ใส่ก็ได้:</label>
+                        <input type="number" id="gen-amount" placeholder="100.00" step="0.01" min="0">
+                    </div>
+                    <button class="btn" onclick="generatePayload()">สร้าง Payload</button>
+                    
+                    <div class="examples">
+                        <h4>ตัวอย่าง:</h4>
+                        <div class="example-item" onclick="setGenerateExample('0812345678', '')">เบอร์โทรศัพท์: 0812345678</div>
+                        <div class="example-item" onclick="setGenerateExample('0812345678', '100')">เบอร์โทรศัพท์ + เงิน: 0812345678 (100 บาท)</div>
+                        <div class="example-item" onclick="setGenerateExample('1234567890123', '50')">เลขประจำตัวผู้เสียภาษี: 1234567890123 (50 บาท)</div>
+                    </div>
+                </div>
+                
+                <div class="converter-box">
+                    <h3>🔍 ผลลัพธ์</h3>
+                    <div id="generate-result"></div>
+                    <div class="qr-section">
+                        <div class="qr-container" id="generate-qr" style="display: none;">
+                            <div id="qr-code"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Decode Tab -->
+        <div id="decode" class="tab-content">
+            <div class="converter-section">
+                <div class="converter-box">
+                    <h3>🔓 แปลง PromptPay Payload</h3>
+                    <div class="form-group">
+                        <label for="decode-payload">PromptPay Payload:</label>
+                        <textarea id="decode-payload" placeholder="ใส่ PromptPay payload ที่ต้องการแปลง..."></textarea>
+                    </div>
+                    <button class="btn secondary" onclick="decodePayload()">แปลง Payload</button>
+                    
+                    <div class="examples">
+                        <h4>ตัวอย่าง Payload:</h4>
+                        <div class="example-item" onclick="setDecodeExample('00020101011102160016A00000067701011101300066812345678058027653037640630445C4')">Static QR (ไม่มีจำนวนเงิน)</div>
+                        <div class="example-item" onclick="setDecodeExample('00020101021102160016A00000067701011101300066812345678058027653037645406100.0063043A8F')">Dynamic QR (มีจำนวนเงิน)</div>
+                    </div>
+                </div>
+                
+                <div class="converter-box">
+                    <h3>📋 ข้อมูลที่แปลงได้</h3>
+                    <div id="decode-result"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test Tab -->
+        <div id="test" class="tab-content">
+            <div class="converter-section">
+                <div class="converter-box">
+                    <h3>🧪 ทดสอบการแปลงไปมา</h3>
+                    <button class="btn" onclick="runFullTest()">ทดสอบแปลงไปมา</button>
+                    <button class="btn secondary" onclick="runValidationTest()">ทดสอบการตรวจสอบ</button>
+                    
+                    <div class="examples">
+                        <h4>การทดสอบจะครอบคลุม:</h4>
+                        <div>✓ สร้าง payload จากข้อมูล</div>
+                        <div>✓ แปลง payload กลับเป็นข้อมูล</div>
+                        <div>✓ ตรวจสอบความถูกต้อง</div>
+                        <div>✓ ทดสอบกับข้อมูลหลายประเภท</div>
+                    </div>
+                </div>
+                
+                <div class="converter-box">
+                    <h3>📊 ผลการทดสอบ</h3>
+                    <div id="test-result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="thaipromptpayapi.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+        
+        function setGenerateExample(target, amount) {
+            document.getElementById('gen-target').value = target;
+            document.getElementById('gen-amount').value = amount;
+        }
+        
+        function setDecodeExample(payload) {
+            document.getElementById('decode-payload').value = payload;
+        }
+        
+        function generatePayload() {
+            const target = document.getElementById('gen-target').value.trim();
+            const amount = document.getElementById('gen-amount').value.trim();
+            const resultDiv = document.getElementById('generate-result');
+            const qrDiv = document.getElementById('generate-qr');
+            
+            if (!target) {
+                resultDiv.innerHTML = '<div class="error">❌ กรุณาใส่เบอร์โทรศัพท์หรือเลขประจำตัวผู้เสียภาษี</div>';
+                return;
+            }
+            
+            try {
+                // Validate target
+                const validation = ThaiPromptPayAPI.validateTarget(target);
+                if (!validation.isValid) {
+                    resultDiv.innerHTML = '<div class="error">❌ รูปแบบไม่ถูกต้อง</div>';
+                    return;
+                }
+                
+                // Generate payload
+                const payload = ThaiPromptPayAPI.generatePayload(target, amount ? parseFloat(amount) : undefined);
+                
+                // Display result
+                const typeText = {
+                    'phone': 'เบอร์โทรศัพท์',
+                    'taxid': 'เลขประจำตัวผู้เสียภาษี',
+                    'ewallet': 'e-Wallet ID'
+                };
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ สร้าง Payload สำเร็จ!</div>
+                    <div class="result-item">
+                        <strong>เป้าหมาย:</strong> ${target} (${typeText[validation.type]})
+                    </div>
+                    <div class="result-item">
+                        <strong>จำนวนเงิน:</strong> ${amount ? amount + ' บาท' : 'ไม่ระบุ'}
+                    </div>
+                    <div class="result-item">
+                        <strong>ประเภท:</strong> ${amount ? 'Dynamic QR' : 'Static QR'}
+                    </div>
+                    <div class="result-item">
+                        <strong>Payload:</strong>
+                        <div class="payload-display">${payload}</div>
+                    </div>
+                `;
+                
+                // Generate QR Code
+                generateQRCode(payload, 'qr-code');
+                qrDiv.style.display = 'block';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ เกิดข้อผิดพลาด: ${error.message}</div>`;
+            }
+        }
+        
+        function decodePayload() {
+            const payload = document.getElementById('decode-payload').value.trim();
+            const resultDiv = document.getElementById('decode-result');
+            
+            if (!payload) {
+                resultDiv.innerHTML = '<div class="error">❌ กรุณาใส่ PromptPay payload</div>';
+                return;
+            }
+            
+            try {
+                // Decode payload
+                const decoded = ThaiPromptPayAPI.decodePayload(payload);
+                
+                if (!decoded.success) {
+                    resultDiv.innerHTML = `<div class="error">❌ ไม่สามารถแปลง payload ได้: ${decoded.error}</div>`;
+                    return;
+                }
+                
+                // Display result
+                resultDiv.innerHTML = `
+                    <div class="success">✅ แปลง Payload สำเร็จ!</div>
+                    <div class="result-item">
+                        <strong>เป้าหมาย:</strong> ${decoded.target}
+                    </div>
+                    <div class="result-item">
+                        <strong>ประเภท:</strong> ${decoded.targetTypeText}
+                    </div>
+                    <div class="result-item">
+                        <strong>จำนวนเงิน:</strong> ${decoded.amount ? decoded.amount + ' บาท' : 'ไม่ระบุ'}
+                    </div>
+                    <div class="result-item">
+                        <strong>ประเภท QR:</strong> ${decoded.isStatic ? 'Static QR (ผู้ใช้ป้อนจำนวนเงินเอง)' : 'Dynamic QR (จำนวนเงินคงที่)'}
+                    </div>
+                    <div class="result-item">
+                        <strong>ประเทศ:</strong> ${decoded.countryCode}
+                    </div>
+                    <div class="result-item">
+                        <strong>สกุลเงิน:</strong> ${decoded.currency}
+                    </div>
+                    <div class="result-item">
+                        <strong>Payload เดิม:</strong>
+                        <div class="payload-display">${decoded.originalPayload}</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ เกิดข้อผิดพลาด: ${error.message}</div>`;
+            }
+        }
+        
+        function runFullTest() {
+            const testCases = [
+                { target: '0812345678', amount: null },
+                { target: '0812345678', amount: 100.50 },
+                { target: '1234567890123', amount: 50.00 },
+                { target: '66812345678', amount: 25.75 }
+            ];
+            
+            const resultDiv = document.getElementById('test-result');
+            let results = [];
+            
+            results.push('<div class="success">🧪 เริ่มทดสอบการแปลงไปมา</div>');
+            
+            testCases.forEach((testCase, index) => {
+                try {
+                    // Generate payload
+                    const payload = ThaiPromptPayAPI.generatePayload(testCase.target, testCase.amount);
+                    
+                    // Decode payload back
+                    const decoded = ThaiPromptPayAPI.decodePayload(payload);
+                    
+                    if (decoded.success) {
+                        // Compare results
+                        const targetMatch = decoded.target === testCase.target || 
+                                          (testCase.target === '66812345678' && decoded.target === '0812345678');
+                        const amountMatch = decoded.amount === testCase.amount;
+                        
+                        if (targetMatch && amountMatch) {
+                            results.push(`<div class="result-item">✅ ทดสอบ ${index + 1}: สำเร็จ - ${testCase.target} ${testCase.amount ? '(' + testCase.amount + ' บาท)' : '(ไม่มีจำนวนเงิน)'}</div>`);
+                        } else {
+                            results.push(`<div class="error">❌ ทดสอบ ${index + 1}: ล้มเหลว - ข้อมูลไม่ตรงกัน</div>`);
+                        }
+                    } else {
+                        results.push(`<div class="error">❌ ทดสอบ ${index + 1}: ล้มเหลว - ${decoded.error}</div>`);
+                    }
+                } catch (error) {
+                    results.push(`<div class="error">❌ ทดสอบ ${index + 1}: เกิดข้อผิดพลาด - ${error.message}</div>`);
+                }
+            });
+            
+            results.push('<div class="success">🏁 ทดสอบเสร็จสิ้น</div>');
+            resultDiv.innerHTML = results.join('');
+        }
+        
+        function runValidationTest() {
+            const testCases = [
+                { target: '0812345678', expected: 'phone', valid: true },
+                { target: '1234567890123', expected: 'taxid', valid: true },
+                { target: '123456789012345', expected: 'ewallet', valid: true },
+                { target: '123', expected: 'unknown', valid: false },
+                { target: '', expected: 'unknown', valid: false }
+            ];
+            
+            const resultDiv = document.getElementById('test-result');
+            let results = [];
+            
+            results.push('<div class="success">🔍 เริ่มทดสอบการตรวจสอบ</div>');
+            
+            testCases.forEach((testCase, index) => {
+                try {
+                    const validation = ThaiPromptPayAPI.validateTarget(testCase.target);
+                    
+                    if (validation.isValid === testCase.valid && validation.type === testCase.expected) {
+                        results.push(`<div class="result-item">✅ ทดสอบ ${index + 1}: สำเร็จ - "${testCase.target}" → ${validation.type}</div>`);
+                    } else {
+                        results.push(`<div class="error">❌ ทดสอบ ${index + 1}: ล้มเหลว - คาดหวัง ${testCase.expected}, ได้ ${validation.type}</div>`);
+                    }
+                } catch (error) {
+                    results.push(`<div class="error">❌ ทดสอบ ${index + 1}: เกิดข้อผิดพลาด - ${error.message}</div>`);
+                }
+            });
+            
+            results.push('<div class="success">🏁 ทดสอบเสร็จสิ้น</div>');
+            resultDiv.innerHTML = results.join('');
+        }
+        
+        function generateQRCode(payload, containerId) {
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(payload);
+                qr.make();
+                
+                document.getElementById(containerId).innerHTML = qr.createImgTag(4);
+            } catch (error) {
+                console.error('QR generation error:', error);
+                document.getElementById(containerId).innerHTML = '<div class="error">ไม่สามารถสร้าง QR Code ได้</div>';
+            }
+        }
+        
+        // Auto-generate example on page load
+        window.addEventListener('load', function() {
+            if (typeof ThaiPromptPayAPI !== 'undefined') {
+                setGenerateExample('0812345678', '100');
+                setTimeout(generatePayload, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
